@@ -1,46 +1,54 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  title: string
+  title?: string
   children: React.ReactNode
 }
 
 export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
   useEffect(() => {
+    if (!isOpen) return
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
-    if (isOpen) document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
   }, [isOpen, onClose])
 
   if (!isOpen) return null
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative z-10 w-full sm:max-w-md bg-card2 border border-border rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl"
+        className="w-full max-w-md rounded-lg border"
+        style={{ backgroundColor: '#1a1a1a', borderColor: '#2a2a2a' }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-white font-gotham font-bold text-xl tracking-widest uppercase">
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-muted hover:text-white transition-colors p-1"
+        {title && (
+          <div
+            className="flex items-center justify-between px-4 py-3 border-b"
+            style={{ borderColor: '#2a2a2a' }}
           >
-            <X size={20} />
-          </button>
-        </div>
-        {children}
+            <span className="font-bold text-lg tracking-widest" style={{ color: '#f5c518' }}>
+              {title}
+            </span>
+            <button
+              onClick={onClose}
+              className="p-1 rounded hover:bg-white/10 transition-colors"
+              style={{ color: '#888888' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+        <div className="p-4">{children}</div>
       </div>
     </div>
   )

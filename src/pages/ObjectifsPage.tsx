@@ -1,195 +1,165 @@
 import { useState } from 'react'
 import { Plus, Check, Trash2 } from 'lucide-react'
-import { v4 as uuid } from '../utils/uuid'
-import { useLocalStorage } from '../hooks/useLocalStorage'
-import { Objectif, ObjectifScope } from '../types'
-import Modal from '../components/ui/Modal'
-import Calendar from '../components/ui/Calendar'
-import {
-  today,
-  isToday,
-  isThisWeek,
-  isThisMonth,
-  isThisYear,
-  formatDate,
-} from '../utils/dates'
-import { format } from 'date-fns'
+import { AppData, Objectif, VisionArea } from '../types'
+import { todayStr } from '../utils/dates'
 
-const SCOPES: { id: ObjectifScope; label: string; emoji: string }[] = [
-  { id: 'day', label: "Aujourd'hui", emoji: '☀️' },
-  { id: 'week', label: 'Cette semaine', emoji: '📅' },
-  { id: 'month', label: 'Ce mois', emoji: '🗓️' },
-  { id: 'year', label: "Cette année", emoji: '🎯' },
-]
-
-function deriveScope(deadline: string): ObjectifScope {
-  if (isToday(deadline)) return 'day'
-  if (isThisWeek(deadline)) return 'week'
-  if (isThisMonth(deadline)) return 'month'
-  return 'year'
+interface Props {
+  data: AppData
+  setData: (d: AppData | ((prev: AppData) => AppData)) => void
 }
 
-export default function ObjectifsPage() {
-  const [objectifs, setObjectifs] = useLocalStorage<Objectif[]>('nexus_objectifs', [])
-  const [modalOpen, setModalOpen] = useState(false)
-  const [title, setTitle] = useState('')
-  const [deadline, setDeadline] = useState(today())
+type SubTab = 'day' | 'week' | 'month' | 'year' | 'longterm'
+
+const SUB_TABS: { id: SubTab; label: string; emoji: string }[] = [
+  { id: 'day', label: 'JOUR', emoji: '☀️' },
+  { id: 'week', label: 'SEMAINE', emoji: '📅' },
+  { id: 'month', label: 'MOIS', emoji: '🗓️' },
+  { id: 'year', label: 'ANNÉE', emoji: '🎯' },
+  { id: 'longterm', label: 'VISION', emoji: '🔭' },
+]
+
+function newId() {
+  return Math.random().toString(36).slice(2)
+}
+
+export default function ObjectifsPage({ data, setData }: Props) {
+  const [subTab, setSubTab] = useState<SubTab>('day')
+  const [input, setInput] = useState('')
+
+  const objectives = data.objectives.filter(o => o.scope === subTab)
 
   const addObjectif = () => {
-    if (!title.trim()) return
-    const scope = deriveScope(deadline)
+    if (!input.trim()) return
     const obj: Objectif = {
-      id: uuid(),
-      title: title.trim(),
-      deadline,
-      scope,
+      id: newId(),
+      title: input.trim(),
+      scope: subTab,
       done: false,
-      createdAt: new Date().toISOString(),
+      createdAt: todayStr(),
     }
-    setObjectifs(prev => [obj, ...prev])
-    setTitle('')
-    setDeadline(today())
-    setModalOpen(false)
+    setData(prev => ({ ...prev, objectives: [...prev.objectives, obj] }))
+    setInput('')
   }
 
-  const toggle = (id: string) => {
-    setObjectifs(prev =>
-      prev.map(o => (o.id === id ? { ...o, done: !o.done } : o))
-    )
+  const toggleObjectif = (id: string) => {
+    setData(prev => ({
+      ...prev,
+      objectives: prev.objectives.map(o => o.id === id ? { ...o, done: !o.done } : o),
+    }))
   }
 
-  const remove = (id: string) => {
-    setObjectifs(prev => prev.filter(o => o.id !== id))
+  const deleteObjectif = (id: string) => {
+    setData(prev => ({ ...prev, objectives: prev.objectives.filter(o => o.id !== id) }))
   }
 
-  const filterByScope = (scope: ObjectifScope) => {
-    return objectifs.filter(o => {
-      switch (scope) {
-        case 'day': return isToday(o.deadline)
-        case 'week': return isThisWeek(o.deadline) && !isToday(o.deadline)
-        case 'month': return isThisMonth(o.deadline) && !isThisWeek(o.deadline)
-        case 'year': return isThisYear(o.deadline) && !isThisMonth(o.deadline)
-      }
-    })
+  const updateVision = (id: string, text: string) => {
+    setData(prev => ({
+      ...prev,
+      visionAreas: prev.visionAreas.map(v => v.id === id ? { ...v, text } : v),
+    }))
   }
 
   return (
-    <div className="px-4 py-5 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-white font-bold text-2xl tracking-widest uppercase">
-          Objectifs
-        </h1>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 bg-accent text-black font-bold font-gotham text-sm px-4 py-2 rounded-xl tracking-wider uppercase hover:bg-accent-hover transition-colors"
-        >
-          <Plus size={16} />
-          Ajouter
-        </button>
+    <div className="pb-24 px-4 pt-4">
+      <h1 className="text-3xl font-gotham font-bold text-white tracking-widest mb-4">MES OBJECTIFS</h1>
+
+      {/* Sub tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+        {SUB_TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setSubTab(t.id)}
+            className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-gotham font-bold tracking-wider transition-all ${
+              subTab === t.id
+                ? 'bg-gold text-black'
+                : 'bg-card border border-border text-muted hover:text-white'
+            }`}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Sections */}
-      {SCOPES.map(({ id, label, emoji }) => {
-        const items = filterByScope(id)
-        const sorted = [...items].sort((a, b) =>
-          a.done === b.done ? 0 : a.done ? 1 : -1
-        )
-        return (
-          <section key={id}>
-            <h2 className="text-muted text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
-              <span>{emoji}</span>
-              {label}
-              {items.length > 0 && (
-                <span className="bg-border text-muted rounded-full px-2 py-0.5 text-[10px]">
-                  {items.filter(i => !i.done).length}/{items.length}
-                </span>
-              )}
-            </h2>
-
-            {sorted.length === 0 ? (
-              <div className="border border-dashed border-border rounded-xl p-4 text-center text-muted text-sm">
-                Aucun objectif
+      {subTab === 'longterm' ? (
+        /* Vision long terme */
+        <div className="space-y-4">
+          <p className="text-muted text-sm font-gotham">Écris ta vision à long terme pour chaque domaine de vie.</p>
+          {data.visionAreas.map(area => (
+            <div key={area.id} className="bg-card rounded-xl p-4 border border-border">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">{area.icon}</span>
+                <h3 className="text-white font-gotham font-bold tracking-wider">{area.title.toUpperCase()}</h3>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {sorted.map(obj => (
+              <textarea
+                value={area.text}
+                onChange={e => updateVision(area.id, e.target.value)}
+                placeholder="Dans 5 ans, je veux..."
+                rows={4}
+                className="w-full bg-card2 border border-border rounded-lg px-3 py-2 text-white text-sm font-gotham resize-none focus:outline-none focus:border-gold"
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* Objectives list */
+        <div>
+          {/* Add input */}
+          <div className="flex gap-2 mb-6">
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addObjectif()}
+              placeholder="Nouvel objectif..."
+              className="flex-1 bg-card border border-border rounded-lg px-4 py-3 text-white font-gotham text-sm focus:outline-none focus:border-gold"
+            />
+            <button
+              onClick={addObjectif}
+              className="bg-gold text-black px-4 py-3 rounded-lg font-gotham font-bold"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+
+          {objectives.length === 0 ? (
+            <div className="text-center text-muted font-gotham py-12">
+              <div className="text-4xl mb-3">🎯</div>
+              <div className="text-sm tracking-wider">Aucun objectif. Ajoute-en un !</div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {objectives
+                .sort((a, b) => Number(a.done) - Number(b.done))
+                .map(obj => (
                   <div
                     key={obj.id}
-                    className={`
-                      flex items-center gap-3 bg-card border rounded-xl px-4 py-3
-                      ${obj.done ? 'border-border opacity-60' : 'border-border hover:border-accent/30 transition-colors'}
-                    `}
+                    className={`flex items-center gap-3 bg-card rounded-xl px-4 py-3 border transition-all ${
+                      obj.done ? 'border-green-900/30 opacity-60' : 'border-border'
+                    }`}
                   >
                     <button
-                      onClick={() => toggle(obj.id)}
-                      className={`
-                        flex-shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all
-                        ${obj.done ? 'bg-accent border-accent' : 'border-muted hover:border-accent'}
-                      `}
+                      onClick={() => toggleObjectif(obj.id)}
+                      className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        obj.done ? 'bg-green-500 border-green-500' : 'border-border bg-transparent'
+                      }`}
                     >
-                      {obj.done && <Check size={13} className="text-black" strokeWidth={3} />}
+                      {obj.done && <Check size={14} className="text-black" />}
                     </button>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-gotham font-semibold ${obj.done ? 'line-through text-muted' : 'text-white'}`}>
-                        {obj.title}
-                      </p>
-                      <p className="text-muted text-[11px]">
-                        Échéance : {formatDate(obj.deadline)}
-                      </p>
-                    </div>
+                    <span className={`flex-1 font-gotham text-sm ${obj.done ? 'line-through text-muted' : 'text-white'}`}>
+                      {obj.title}
+                    </span>
                     <button
-                      onClick={() => remove(obj.id)}
-                      className="text-border hover:text-danger transition-colors flex-shrink-0"
+                      onClick={() => deleteObjectif(obj.id)}
+                      className="text-muted hover:text-red-400 transition-colors p-1"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 ))}
-              </div>
-            )}
-          </section>
-        )
-      })}
-
-      {/* Add modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Nouvel objectif">
-        <div className="space-y-4">
-          <div>
-            <label className="text-muted text-xs uppercase tracking-wider mb-1 block">
-              Objectif
-            </label>
-            <input
-              autoFocus
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addObjectif()}
-              placeholder="Ex: Terminer le projet..."
-              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white font-gotham placeholder-muted focus:outline-none focus:border-accent transition-colors"
-            />
-          </div>
-          <div>
-            <label className="text-muted text-xs uppercase tracking-wider mb-2 block">
-              Échéance
-            </label>
-            <Calendar
-              selected={deadline}
-              onSelect={setDeadline}
-              minDate={format(new Date(), 'yyyy-MM-dd')}
-            />
-            <p className="text-accent text-xs mt-2 text-center">
-              → Scope: {deriveScope(deadline) === 'day' ? "Aujourd'hui" : deriveScope(deadline) === 'week' ? 'Cette semaine' : deriveScope(deadline) === 'month' ? 'Ce mois' : 'Cette année'}
-            </p>
-          </div>
-          <button
-            onClick={addObjectif}
-            disabled={!title.trim()}
-            className="w-full bg-accent text-black font-bold font-gotham uppercase tracking-wider py-3 rounded-xl hover:bg-accent-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Créer l'objectif
-          </button>
+            </div>
+          )}
         </div>
-      </Modal>
+      )}
     </div>
   )
 }

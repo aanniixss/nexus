@@ -1,6 +1,6 @@
 import { Habit, DailyEntry, AppData } from '../types'
-import { dayOfWeekMon0, formatYMD, todayStr, parseDate, addDays } from './dates'
-import { format, addDays as dfAddDays } from 'date-fns'
+import { dayOfWeekMon0, formatYMD, todayStr, parseDate } from './dates'
+import { addDays } from 'date-fns'
 
 export function getApplicableHabits(habits: Habit[], date: string): Habit[] {
   const d = parseDate(date)
@@ -57,18 +57,18 @@ export function calcStreak(data: AppData): number {
   const today = parseDate(todayStr())
   let streak = 0
   let cur = today
-  for (let i = 0; i < 365; i++) {
+  for (let i = 0; i < 730; i++) {
     const dateStr = formatYMD(cur)
     const entry = data.entries[dateStr]
     const score = calcScore(data.habits, entry, dateStr)
     if (score !== null && score >= 40) {
       streak++
     } else if (i === 0) {
-      // today not tracked yet is OK — check yesterday
+      // today not yet tracked — skip and check yesterday
     } else {
       break
     }
-    cur = dfAddDays(cur, -1)
+    cur = addDays(cur, -1)
   }
   return streak
 }

@@ -5,15 +5,11 @@ import {
   addWeeks,
   startOfWeek,
   endOfWeek,
-  startOfMonth,
-  endOfMonth,
+  getDaysInMonth,
+  getISOWeek,
+  isToday as dfIsToday,
   startOfYear,
   endOfYear,
-  getWeek,
-  getISOWeek,
-  getDaysInMonth,
-  isSameDay,
-  isToday as dfIsToday,
 } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -24,7 +20,6 @@ export const parseDate = (s: string) => parseISO(s)
 export const formatYMD = (d: Date) => format(d, 'yyyy-MM-dd')
 
 export const dayOfWeekMon0 = (d: Date): number => {
-  // Returns 0=Mon, 1=Tue, ... 6=Sun
   const dow = d.getDay() // 0=Sun
   return dow === 0 ? 6 : dow - 1
 }
@@ -56,17 +51,17 @@ export const nextDay = (s: string) => formatYMD(addDays(parseISO(s), 1))
 
 /** All ISO weeks in a given year (Mon-Sun) */
 export function getWeeksOfYear(year: number): { weekNum: number; start: Date; end: Date }[] {
-  const jan4 = new Date(year, 0, 4) // Jan 4 is always in week 1
+  const jan4 = new Date(year, 0, 4)
   const firstMon = startOfWeek(jan4, { weekStartsOn: 1 })
   const weeks: { weekNum: number; start: Date; end: Date }[] = []
   let cur = firstMon
-  while (cur.getFullYear() <= year) {
+  while (true) {
     const end = endOfWeek(cur, { weekStartsOn: 1 })
+    if (cur.getFullYear() > year) break
     if (cur.getFullYear() === year || end.getFullYear() === year) {
       weeks.push({ weekNum: getISOWeek(cur), start: cur, end })
     }
     cur = addWeeks(cur, 1)
-    if (cur.getFullYear() > year && end.getFullYear() < year) break
     if (weeks.length > 54) break
   }
   return weeks
@@ -107,3 +102,5 @@ export const MONTH_NAMES_FR = [
 ]
 
 export const DAY_ABBR_FR = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM']
+
+export { addDays } from 'date-fns'

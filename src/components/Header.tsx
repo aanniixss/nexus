@@ -1,5 +1,3 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-
 interface HeaderProps {
   year: number
   onYearChange: (y: number) => void
@@ -8,42 +6,57 @@ interface HeaderProps {
 
 export default function Header({ year, onYearChange, streak }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between px-3 py-2 border-b border-border bg-card sticky top-0 z-40">
+    <header
+      className="flex items-center justify-between px-3 py-2 sticky top-0 z-40"
+      style={{ backgroundColor: '#111111', borderBottom: '1px solid #2a2a2a' }}
+    >
       {/* Left: Logo + title */}
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">🦇</span>
-        <div className="leading-tight">
-          <div className="text-gold font-bold tracking-widest text-sm uppercase">
-            Gotham Discipline
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-2xl flex-shrink-0">🦇</span>
+        <div className="leading-tight min-w-0">
+          <div
+            className="font-bold tracking-widest text-sm uppercase truncate"
+            style={{ color: '#f5c518' }}
+          >
+            GOTHAM DISCIPLINE
           </div>
-          <div className="text-muted text-xs tracking-wider uppercase">
-            Anis · Tracker de Vie
+          <div className="text-xs tracking-wider uppercase" style={{ color: '#888888' }}>
+            ANIS · TRACKER DE VIE
           </div>
         </div>
       </div>
 
       {/* Center: Year navigator */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 flex-shrink-0">
         <button
           onClick={() => onYearChange(year - 1)}
-          className="text-muted hover:text-white transition-colors p-1"
+          className="px-1 py-1 rounded transition-colors hover:text-white"
+          style={{ color: '#888888' }}
         >
-          <ChevronLeft size={16} />
+          ◄
         </button>
-        <span className="text-white font-bold tracking-widest text-sm">{year}</span>
+        <span className="font-bold tracking-widest text-sm px-1" style={{ color: '#ffffff' }}>
+          {year}
+        </span>
         <button
           onClick={() => onYearChange(year + 1)}
-          className="text-muted hover:text-white transition-colors p-1"
+          className="px-1 py-1 rounded transition-colors hover:text-white"
+          style={{ color: '#888888' }}
         >
-          <ChevronRight size={16} />
+          ►
         </button>
       </div>
 
       {/* Right: Streak */}
-      <div className="flex items-center">
-        <div className="bg-card2 border border-border rounded-full px-3 py-1 flex items-center gap-1">
+      <div className="flex items-center flex-shrink-0">
+        <div
+          className="rounded-full px-3 py-1 flex items-center gap-1"
+          style={{ backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a' }}
+        >
           <span className="text-base">🔥</span>
-          <span className="text-gold font-bold text-sm tracking-wide">{streak}J</span>
+          <span className="font-bold text-sm tracking-wide" style={{ color: '#f5c518' }}>
+            {streak}J
+          </span>
         </div>
       </div>
     </header>

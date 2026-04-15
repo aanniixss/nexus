@@ -13,10 +13,15 @@ export function useTimer(): UseTimerReturn {
   const [elapsed, setElapsed] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
+  const elapsedRef = useRef<number>(0)
+
+  useEffect(() => {
+    elapsedRef.current = elapsed
+  }, [elapsed])
 
   useEffect(() => {
     if (isRunning) {
-      startTimeRef.current = Date.now() - elapsed * 1000
+      startTimeRef.current = Date.now() - elapsedRef.current * 1000
       intervalRef.current = setInterval(() => {
         setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
       }, 1000)
@@ -30,17 +35,19 @@ export function useTimer(): UseTimerReturn {
 
   const start = useCallback((initialSeconds = 0) => {
     setElapsed(initialSeconds)
+    elapsedRef.current = initialSeconds
     setIsRunning(true)
   }, [])
 
   const stop = useCallback(() => {
     setIsRunning(false)
-    return elapsed
-  }, [elapsed])
+    return elapsedRef.current
+  }, [])
 
   const reset = useCallback(() => {
     setIsRunning(false)
     setElapsed(0)
+    elapsedRef.current = 0
   }, [])
 
   return { isRunning, elapsed, start, stop, reset }
