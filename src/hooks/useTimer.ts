@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 interface UseTimerReturn {
   isRunning: boolean
   elapsed: number // seconds
-  start: () => void
+  start: (initialSeconds?: number) => void
   stop: () => number // returns elapsed seconds
   reset: () => void
 }
@@ -28,14 +28,14 @@ export function useTimer(): UseTimerReturn {
     }
   }, [isRunning])
 
-  const start = useCallback(() => {
+  const start = useCallback((initialSeconds = 0) => {
+    setElapsed(initialSeconds)
     setIsRunning(true)
   }, [])
 
   const stop = useCallback(() => {
     setIsRunning(false)
-    const result = elapsed
-    return result
+    return elapsed
   }, [elapsed])
 
   const reset = useCallback(() => {
