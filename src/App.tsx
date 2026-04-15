@@ -6,6 +6,7 @@ import { todayStr } from './utils/dates'
 import { calcStreak } from './utils/score'
 import Header from './components/Header'
 import TopNav from './components/TopNav'
+import Drawer from './components/Drawer'
 import AujourdhuiPage from './pages/AujourdhuiPage'
 import SemainesPage from './pages/SemainesPage'
 import MoisPage from './pages/MoisPage'
@@ -16,6 +17,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('aujourd_hui')
   const [selectedDate, setSelectedDate] = useState(todayStr())
   const [year, setYear] = useState(new Date().getFullYear())
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [data, setData] = useLocalStorage<AppData>('nexus_v2', DEFAULT_DATA)
 
   const updateEntry = (date: string, updater: (e: DailyEntry) => DailyEntry) => {
@@ -93,11 +95,12 @@ export default function App() {
 
   return (
     <div className="min-h-full flex flex-col" style={{ backgroundColor: '#0a0a0a' }}>
-      <Header year={year} onYearChange={setYear} streak={streak} />
+      <Header year={year} onYearChange={setYear} streak={streak} onMenuOpen={() => setDrawerOpen(true)} />
       <TopNav active={tab} onChange={setTab} />
       <main className="flex-1 overflow-y-auto">
         {renderPage()}
       </main>
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   )
 }
