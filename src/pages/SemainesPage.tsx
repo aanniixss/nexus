@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { AppData } from '../types'
 import {
-  getWeeksOfYear, formatYMD, fmtShortDate, DAY_ABBR_FR, addDays as addDaysFn,
-  parseDate,
+  getWeeksOfYear, formatYMD, fmtShortDate, DAY_ABBR_FR,
 } from '../utils/dates'
 import { calcScore, scoreColor, getApplicableHabits, habitDone } from '../utils/score'
 import { addDays } from 'date-fns'
